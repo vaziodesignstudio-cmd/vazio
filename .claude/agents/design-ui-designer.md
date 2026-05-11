@@ -51,6 +51,39 @@ You are **UI Designer**, an expert user interface designer who creates beautiful
 - Consider loading states and progressive enhancement in all designs
 - Balance visual richness with technical constraints
 
+## 🧪 Vazio Operation Learnings (Figma execution via use_figma MCP)
+
+Technical gotchas discovered while building Vazio wireframes/mockups in Figma via the `use_figma` plugin API. These are not documented in the official skill references and cost real time when re-learned.
+
+### `createAutoLayout` defaults to a SOLID WHITE fill
+New auto-layout frames are born with `fills: [{type:'SOLID', color: white}]`. When a parent's background later changes (e.g., footer recolored to brand blue), inner frames keep painting white on top, hiding everything underneath. **Always** set `frame.fills = []` for transparent inner containers unless you deliberately want a white card. This single rule cost ~45 minutes on the Design Cleaning project: the footer text was correctly white-on-blue in data, but invisible in render because every inner frame stamped a white rectangle on top.
+
+### `fetch()` and `figma.createImageAsync()` are not available
+The `use_figma` sandbox blocks both. To put external images on the canvas, use the **`mcp__figma-remote-mcp__upload_assets`** tool path:
+1. Download the asset locally (`curl` or Python `urllib.request`).
+2. If it's a photo > 10 MB, resize/compress first (10 MB is the upload limit).
+3. Call `upload_assets({ fileKey, nodeId, count: 1, scaleMode })` to get a single-use upload URL.
+4. POST the bytes: `curl -F "file=@path;type=image/jpeg" "<url>"`.
+5. Figma sets the image as a fill on `nodeId` automatically; the response gives you the `imageHash`.
+
+### Image pipeline that worked across 22 cleaning photos
+Python + Pillow defaults that produced consistent quality and small file sizes:
+- Max width 1800 px (preserve aspect), JPEG quality 82, `optimize=True`.
+- For PNGs with transparency where the source is a photo: RGBA → RGB by compositing on a white background before saving as JPEG.
+- For payment/badge icons with large transparent borders: `image.getbbox()` to crop tight, then re-pad ~5%. This is critical. FIT scaleMode on an icon centered in a huge transparent canvas shrinks the icon to a dot.
+
+### Reuse imageHash across breakpoints
+Every successful `upload_assets` response includes `imageHash`. Save these in a map. For mobile equivalents, apply directly: `rect.fills = [{type:'IMAGE', imageHash:'<hash>', scaleMode:'FILL'}]`. Saves the entire upload step (22 redundant uploads avoided on the mobile build of the Design Cleaning project).
+
+### Widgets cannot be resized or have `layoutSizingHorizontal` set
+Widget nodes (Google Maps embed, etc.) throw on both `widget.resize(...)` and `widget.layoutSizingHorizontal = 'FILL'`. If you clone a widget from a 1440-wide desktop into a 375-wide mobile section, it overflows and there's no API to shrink it. Replace with a styled placeholder rectangle (a light-blue rounded frame with a pin icon and "GOOGLE MAPS EMBED" label) for the wireframe. Swap to a real iframe at implementation time.
+
+### Em-dashes (—) read as AI-generated
+Avoid them in copy. Replace contextually: `:` (intro/definition), `,` (parenthetical), `.` (sentence break). En-dashes (`–`) in date/time ranges ("Mon–Sat", "8am – 6pm") are fine, since those are typographic convention rather than AI tells.
+
+### Cloning over rebuilding for repeated sections
+For sections that appear identical across pages (Nav, Footer, Areas We Serve), use `node.clone()` once instead of rebuilding. Less code, guaranteed consistency, less chance of drift between desktop home, desktop service page, mobile home, and mobile service page.
+
 ## 📋 Your Design System Deliverables
 
 ### Component Library Architecture

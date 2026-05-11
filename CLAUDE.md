@@ -1,6 +1,10 @@
 # Contexto Vazio (para agentes)
 
-Este repositório é a base operacional do estúdio **Vazio** (web design). É independente da operação AstroPay; nunca misturar contextos.
+Este repositório é a operação **website creation para empresas de limpeza** da Vazio. A Vazio é um estúdio de design com múltiplas operações planejadas; outras (outros nichos, outros tipos de entrega) vivem em outros repos/branches.
+
+Não é repositório de portfólio próprio da Vazio, não é repo de outras verticais. Tudo aqui dentro é otimizado pra **entregar sites de empresa de limpeza** com qualidade.
+
+É independente da operação AstroPay; nunca misturar contextos.
 
 ## Antes de qualquer tarefa, leia
 
